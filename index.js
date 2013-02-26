@@ -1,16 +1,17 @@
 exports.module = tpl_for
 
-//*** let users use {% for item in items reversed %}. Is the list of items reversed?
+var parser = require('parser')
+// allows for ({% for item in items reversed %}
 
 function tpl_for(parser, contents) { 
-  var bits = contents.split(/\s+/)  // ["for", "item", "in", "items"]
-    , contextTarget = bits[1]
+  var bits = contents.split(/\s+/)  
+    , contextTarget = bits[1] 
+    , reverseTag = bits[3].reverse() 
     , lookupContextVariable = parser.lookup(bits[3]) 
     , forBody
     , emptyBody
 
   parser.parse({
-  	// 'endfor' ends a loop within Django templates.
       'endfor': endfor
     , 'empty': empty
   })
@@ -20,13 +21,17 @@ function tpl_for(parser, contents) {
       , output = []
       , loopContext
 
-    if(!target || !target.length) {
+    if(!target || !target.length) { 
       return emptyBody ? emptyBody(context) : ''
     }
 
     for(var i = 0, len = target.length; i < len; ++i) {
       loopContext = Object.create(context)
-      loopContext[contextTarget] = target[i]
+      if (reverseTag) {
+				loopContext[reverseTag[1]] = target[i]
+      } else {
+      	loopContext[contextTarget] = target[i]
+      }
       loopContext.forloop = {
           parent: loopContext.forloop
         , index: i
@@ -53,10 +58,3 @@ function tpl_for(parser, contents) {
     }
   }
 }
-
-// Loop over each item in an array. For example, to display a list of athletes provided in athlete_list:
-// 	tags ==	{% for item in items %}
-//  tags== 		<li>{% if item.okay %}it's okay{% else %}it's not okay{% endif %}</li>
-// 	tags==	{% endfor %}
-
-// variables ==	{{ message }}
